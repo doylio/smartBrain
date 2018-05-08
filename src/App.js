@@ -1,13 +1,9 @@
 import React, { Component } from 'react';
 import './App.css';
 import Particles from 'react-particles-js';
-import Navigation from './components/Navigation/Navigation';
 import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
-import Rank from './components/Rank/Rank';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition.js';
-import SignIn from './components/SignIn/SignIn';
-import Register from './components/Register/Register';
 import Clarifai from 'clarifai';
 import 'tachyons';
 
@@ -31,66 +27,85 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-      input: '',
+      file: '',
+      urlInput: '',
       imageUrl: '',
-      box: {},
-      route: 'signin'
+      boxes: [],
+      loaded: true,
     }
   }
 
   calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const clarifaiFace = data.outputs[0].data.regions.map(box => { 
+      return box.region_info.bounding_box 
+    });
     const image = document.getElementById('inputImage');
     const width = Number(image.width);
     const height = Number(image.height);
-    return {
-      leftCol:clarifaiFace.left_col * width,
-      topRow: clarifaiFace.top_row * height,
-      rightCol: width - (clarifaiFace.right_col * width),
-      bottomRow: height - (clarifaiFace.bottom_row * height) 
-    }
+    return clarifaiFace.map(box => {
+      return {
+        leftCol:box.left_col * width,
+        topRow: box.top_row * height,
+        rightCol: width - (box.right_col * width),
+        bottomRow: height - (box.bottom_row * height) 
+      }
+    });
   }
 
-  displayFaceBox = (box) => {
-    this.setState({box: box});
-    console.log(box);
+  displayFaceBox = (boxes) => {
+    this.setState({boxes: boxes});
   }
 
-  onRouteChange = (route) => {
-    this.setState({route: route});
+  onLocalInputChange = (file) => {
+    this.setState({file});
+    this.setState({urlInput: ''});
   }
 
   onButtonSubmit = () => {
-    this.setState({imageUrl: this.state.input})
-    app.models
-      .predict(
-        "a403429f2ddf4b49b307e318f00e528b", 
-        this.state.input)
-      .then(response => this.displayFaceBox(this.calculateFaceLocation(response)))
-      .catch(err => console.log(err));
+    let data;
+    if(this.state.urlInput) {
+      this.setState({imageUrl:this.state.urlInput});
+      data = this.state.urlInput;
+    }
+    if(this.state.file) {
+      const imageFile = document.querySelector("#local-input").files[0];
+      this.setState({imageUrl: URL.createObjectURL(imageFile)});
+      data = this.state.file;
+    }
+    
+    if(data) {
+      this.setState({loaded: false});
+      app.models
+        .predict(
+          "a403429f2ddf4b49b307e318f00e528b", 
+          data)
+        .then(response => this.calculateFaceLocation(response))
+        .then(boxes => {
+          this.setState({loaded: true});
+          this.displayFaceBox(boxes);
+        })
+        .catch(err => console.log(err));
+    }
   }
 
-  onInputChange = (event) => {
-    this.setState({input: event.target.value})
+  onUrlInputChange = (value) => {
+    this.setState({urlInput: value});
+    this.setState({file: ''});
   }
 
   render() {
     return (
       <div className="App">
         <Particles className="particles" params={particleOptions}/>
-        <Navigation onRouteChange={this.onRouteChange} route={this.state.route}/>
-        { this.state.route === 'home' 
-          ? <div>
-              <Logo />
-              <Rank />
-              <ImageLinkForm onInputChange={this.onInputChange} onButtonSubmit={this.onButtonSubmit}/>
-              <FaceRecognition box={this.state.box} imageUrl={this.state.imageUrl}/> 
-            </div>
-          : (this.state.route === 'register'
-            ? <Register />
-            : <SignIn onRouteChange={this.onRouteChange}/>
-            )
-        }
+          <div>
+            <Logo />
+            <ImageLinkForm 
+              onUrlInputChange={this.onUrlInputChange} 
+              onButtonSubmit={this.onButtonSubmit} 
+              onLocalInputChange={this.onLocalInputChange}
+            />
+            <FaceRecognition boxes={this.state.boxes} imageUrl={this.state.imageUrl} loaded={this.state.loaded}/> 
+          </div>
       </div>
     );
   }
