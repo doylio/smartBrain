@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ImageLinkForm = ({ onUrlInputChange, onButtonSubmit, onLocalInputChange}) => {
+const ImageLinkForm = ({ onUrlInputChange, onButtonSubmit, onLocalInputChange, errorMessage}) => {
 
 	const inputSelect = () => {
 		const localInput = document.querySelector("#local-input");
@@ -40,6 +40,15 @@ const ImageLinkForm = ({ onUrlInputChange, onButtonSubmit, onLocalInputChange}) 
 					<p className="f3 white">OR</p>
 					<input id="web-input" className='f4 pa2 w-70 center bn bg-light-yellow' type='text' placeholder="Enter Image URL" onChange={inputSelect}/>
 					<br/>
+					<p 
+						className="center white pa2 w-70" 
+						style={
+							errorMessage
+							? {backgroundColor: "rgba(255,0,0,0.5)"}
+							: {display: 'none'}
+						} >
+						{errorMessage}
+					</p>
 					<button className='ma3 pa2 w-30 grow f4 link ph3 dib white bw0 bg-green' onClick={onButtonSubmit}>Detect</button>
 				</div>
 		</div>

@@ -32,6 +32,7 @@ class App extends Component {
       imageUrl: '',
       boxes: [],
       loaded: true,
+      errorMessage: "",
     }
   }
 
@@ -57,8 +58,11 @@ class App extends Component {
   }
 
   onLocalInputChange = (file) => {
-    this.setState({file});
-    this.setState({urlInput: ''});
+    this.setState({
+      file,
+      urlInput: '',
+      errorMessage: ""
+    });
   }
 
   onButtonSubmit = () => {
@@ -84,13 +88,26 @@ class App extends Component {
           this.setState({loaded: true});
           this.displayFaceBox(boxes);
         })
-        .catch(err => console.log(err));
+        .catch(err => {
+          console.log("ERROR:", err);
+          if(err.status === 401) {
+            this.setState({errorMessage: "Error:  Unable to connect to Clarifai servers"});
+          } else if (err.status === 400) {
+            this.setState({errorMessage: "Error:  Input image invalid"});
+          } else {
+            this.setState({errorMessage: "Error:  Something went wrong"});
+          }
+
+        });
     }
   }
 
   onUrlInputChange = (value) => {
-    this.setState({urlInput: value});
-    this.setState({file: ''});
+    this.setState({
+      urlInput: value,
+      file: '',
+      errorMessage: ""
+    });
   }
 
   render() {
@@ -103,6 +120,7 @@ class App extends Component {
               onUrlInputChange={this.onUrlInputChange} 
               onButtonSubmit={this.onButtonSubmit} 
               onLocalInputChange={this.onLocalInputChange}
+              errorMessage={this.state.errorMessage}
             />
             <FaceRecognition boxes={this.state.boxes} imageUrl={this.state.imageUrl} loaded={this.state.loaded}/> 
           </div>
