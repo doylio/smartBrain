@@ -97,7 +97,7 @@ class App extends Component {
           } else {
             this.setState({errorMessage: "Error:  Something went wrong"});
           }
-
+          this.setState({loaded: true});
         });
     }
   }
