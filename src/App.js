@@ -37,20 +37,24 @@ class App extends Component {
   }
 
   calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions.map(box => { 
-      return box.region_info.bounding_box 
-    });
-    const image = document.getElementById('inputImage');
-    const width = Number(image.width);
-    const height = Number(image.height);
-    return clarifaiFace.map(box => {
-      return {
-        leftCol:box.left_col * width,
-        topRow: box.top_row * height,
-        rightCol: width - (box.right_col * width),
-        bottomRow: height - (box.bottom_row * height) 
-      }
-    });
+    if(data.outputs[0].data.regions) {
+      const clarifaiFace = data.outputs[0].data.regions.map(box => { 
+        return box.region_info.bounding_box 
+      });
+      const image = document.getElementById('inputImage');
+      const width = Number(image.width);
+      const height = Number(image.height);
+      return clarifaiFace.map(box => {
+        return {
+          leftCol:box.left_col * width,
+          topRow: box.top_row * height,
+          rightCol: width - (box.right_col * width),
+          bottomRow: height - (box.bottom_row * height) 
+        }
+      });
+    } else {
+      return []
+    }
   }
 
   displayFaceBox = (boxes) => {
@@ -67,6 +71,7 @@ class App extends Component {
 
   onButtonSubmit = () => {
     let data;
+    this.setState({boxes: []})
     if(this.state.urlInput) {
       this.setState({imageUrl:this.state.urlInput});
       data = this.state.urlInput;
